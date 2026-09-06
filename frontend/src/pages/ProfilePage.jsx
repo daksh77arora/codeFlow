@@ -3,36 +3,50 @@ import { UserIcon, MailIcon, CalendarIcon, TrophyIcon, CodeIcon, ClockIcon, Awar
 import Navbar from '../components/Navbar';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getUserStats } from '../lib/submissions';
+import { getUserStats, getUserSubmissions } from '../lib/submissions';
 
 function ProfilePage() {
     const { user } = useUser();
     const [isEditing, setIsEditing] = useState(false);
     const { data: stats = {} } = useQuery({ queryKey: ['userStats'], queryFn: getUserStats });
+    const { data: submissions = [] } = useQuery({ queryKey: ['userSubmissions'], queryFn: getUserSubmissions });
+
+    // Derive skills from actual submission language breakdown
+    const languageCounts = submissions.reduce((acc, sub) => {
+        const lang = sub.language || 'unknown';
+        acc[lang] = (acc[lang] || 0) + 1;
+        return acc;
+    }, {});
+    const totalSubs = submissions.length || 1; // avoid division by zero
+    const languageNames = { javascript: 'JavaScript', python: 'Python', java: 'Java', cpp: 'C++' };
+    const skills = Object.entries(languageCounts)
+        .map(([lang, count]) => ({
+            name: languageNames[lang] || lang,
+            level: Math.min(100, Math.round((count / totalSubs) * 100)),
+        }))
+        .sort((a, b) => b.level - a.level);
+
+    // Derive achievements from actual stats
+    const problemsSolved = stats.problemsSolved || 0;
+    const achievements = [
+        { id: 1, name: 'First Problem', icon: '🎯', earned: problemsSolved >= 1 },
+        { id: 2, name: '5 Problems', icon: '🔥', earned: problemsSolved >= 5 },
+        { id: 3, name: '10 Problems', icon: '⭐', earned: problemsSolved >= 10 },
+        { id: 4, name: '25 Problems', icon: '💎', earned: problemsSolved >= 25 },
+        { id: 5, name: 'Week Streak', icon: '⚡', earned: (stats.streak || 0) >= 7 },
+        { id: 6, name: 'Code Master', icon: '👑', earned: problemsSolved >= 50 },
+    ];
 
     const userStats = {
-        problemsSolved: stats.problemsSolved || 0,
+        problemsSolved,
         totalSessions: stats.totalSubmissions || 0,
         totalTime: '-',
         successRate: stats.totalSubmissions ? Math.round((stats.acceptedSubmissions / stats.totalSubmissions) * 100) : 0,
         currentStreak: stats.streak || 0,
         longestStreak: stats.streak || 0,
         rank: stats.rank || '-',
-        achievements: [
-            { id: 1, name: 'First Problem', icon: '🎯', earned: true },
-            { id: 2, name: '10 Problems', icon: '🔥', earned: true },
-            { id: 3, name: '50 Problems', icon: '💎', earned: false },
-            { id: 4, name: 'Week Streak', icon: '⚡', earned: true },
-            { id: 5, name: 'Interview Pro', icon: '🏆', earned: true },
-            { id: 6, name: 'Code Master', icon: '👑', earned: false },
-        ],
-        skills: [
-            { name: 'JavaScript', level: 90 },
-            { name: 'Python', level: 75 },
-            { name: 'Java', level: 60 },
-            { name: 'Algorithms', level: 80 },
-            { name: 'Data Structures', level: 85 },
-        ],
+        achievements,
+        skills: skills.length > 0 ? skills : [{ name: 'No submissions yet', level: 0 }],
         recentActivity: Array.from({ length: 365 }, (_, i) => ({
             date: new Date(Date.now() - i * 24 * 60 * 60 * 1000),
             count: 0,
