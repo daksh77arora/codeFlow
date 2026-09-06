@@ -4,7 +4,7 @@ import "tldraw/tldraw.css";
 import { io } from "socket.io-client";
 
 // Connect to backend
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? window.location.origin : "http://localhost:3000");
+const API_URL = import.meta.env.PROD ? window.location.origin : (import.meta.env.VITE_API_URL || "http://localhost:3000");
 // Socket needs base URL, not /api
 const SOCKET_URL = API_URL.replace("/api", "");
 

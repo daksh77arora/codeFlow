@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "/api" : "http://localhost:3000/api");
+// In production (monolith), always use relative /api since frontend & backend share the same origin.
+// In dev, use localhost:3000 where the backend dev server runs.
+const API_URL = import.meta.env.PROD ? "/api" : (import.meta.env.VITE_API_URL || "http://localhost:3000/api");
 
 /**
  * @param {string} language - programming language

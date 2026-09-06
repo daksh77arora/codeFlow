@@ -1,7 +1,7 @@
 import axios from "axios";
 import { PROBLEMS } from "../data/problems";
 
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "/api" : "http://localhost:3000/api");
+const API_URL = import.meta.env.PROD ? "/api" : (import.meta.env.VITE_API_URL || "http://localhost:3000/api");
 
 export const submitCode = async (problemId, code, language, sessionId) => {
     const problem = PROBLEMS[problemId];
