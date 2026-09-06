@@ -16,14 +16,16 @@ import executionRoutes from "./routes/executionRoutes.js";
 
 import http from "http";
 import { Server } from "socket.io";
+import fs from "fs";
 
 const app = express();
 const httpServer = http.createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: ENV.CLIENT_URL,
+    origin: true,
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
@@ -49,8 +51,8 @@ const __dirname = path.resolve();
 
 // middleware
 app.use(express.json());
-// credentials:true meaning?? => server allows a browser to include cookies on request
-app.use(cors({ origin: ENV.CLIENT_URL, credentials: true }));
+// credentials:true allows cookies with dynamically reflected origin
+app.use(cors({ origin: true, credentials: true }));
 app.use(clerkMiddleware()); // this adds auth field to request object: req.auth()
 
 app.use("/api/inngest", serve({ client: inngest, functions }));
@@ -66,10 +68,18 @@ app.get("/health", (req, res) => {
 
 // make our app ready for deployment
 if (ENV.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+  const possiblePaths = [
+    path.join(__dirname, "../frontend/dist"),
+    path.join(__dirname, "frontend/dist"),
+    path.join(process.cwd(), "frontend/dist"),
+    path.join(process.cwd(), "../frontend/dist"),
+  ];
+  const distDir = possiblePaths.find((p) => fs.existsSync(p)) || possiblePaths[0];
+
+  app.use(express.static(distDir));
 
   app.get("/{*any}", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
+    res.sendFile(path.join(distDir, "index.html"));
   });
 }
 
